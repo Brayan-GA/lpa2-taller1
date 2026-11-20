@@ -3,6 +3,10 @@
 ![commits](https://badgen.net/github/commits/UR-CC/lpa2-taller1?icon=github) 
 ![last_commit](https://img.shields.io/github/last-commit/UR-CC/lpa2-taller1)
 
+> **Entrega del estudiante:** las instrucciones para ejecutar las pruebas y los
+> resultados obtenidos están en la sección
+> [Ejecución de las Pruebas de esta Entrega](#ejecución-de-las-pruebas-de-esta-entrega).
+
 ## Objetivos
 
 - Aplicar **pruebas unitarias** con `pytest`
@@ -480,6 +484,117 @@ Name                    Stmts   Miss  Cover   Missing
 src/models/mueble.py       15      3    80%   22-24
 src/services/tienda.py     45     10    78%   15-18, 33-39
 ```
+
+## Ejecución de las Pruebas de esta Entrega
+
+### 1. Preparar el entorno
+
+Requiere Python 3.10 o superior (probado con Python 3.13).
+
+**Windows (PowerShell):**
+
+```powershell
+python -m venv venv
+venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+```
+
+> Si PowerShell bloquea la activación, ejecutar una vez:
+> `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`
+
+**Mac / Linux / WSL:**
+
+```bash
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
+
+No es necesario configurar `PYTHONPATH`: `pytest.ini` ya agrega `.`, `src` y
+`tests` con la opción `pythonpath`.
+
+### 2. Ejecutar las pruebas
+
+Todos los comandos se ejecutan desde la raíz del proyecto, con el entorno
+virtual activado.
+
+| Comando | Qué hace |
+|---|---|
+| `pytest` | Ejecuta todas las pruebas con cobertura (terminal + HTML) |
+| `pytest tests/unit` | Solo pruebas unitarias |
+| `pytest tests/integration` | Solo pruebas de integración |
+| `pytest -m integration` | Pruebas con el marcador `integration` |
+| `pytest -m "not integration"` | Todo excepto integración |
+| `pytest tests/unit/ui/test_menu.py -v` | Un archivo específico |
+| `pytest --no-cov` | Pruebas sin medir cobertura (más rápido) |
+| `pytest --durations=10` | Muestra las 10 pruebas más lentas |
+
+El reporte HTML de cobertura se genera en `htmlcov/`. Para abrirlo:
+
+```powershell
+start htmlcov\index.html      # Windows
+```
+
+```bash
+open htmlcov/index.html       # Mac
+xdg-open htmlcov/index.html   # Linux
+```
+
+### 3. Resultados
+
+```
+543 passed, 8 xfailed
+Required test coverage of 80.0% reached. Total coverage: 99.78%
+```
+
+| Módulo | Cobertura |
+|---|---|
+| `src/models/` (mueble, categorías, concretos) | 100% |
+| `src/models/composicion/comedor.py` | 99% |
+| `src/services/tienda.py` | 100% |
+| `src/ui/menu.py` | 99% |
+| `src/main.py` | 100% |
+| **Total** | **99.78%** |
+
+Las 8 pruebas `xfailed` son **fallos esperados** marcados con
+`@pytest.mark.xfail`: documentan defectos conocidos del código fuente (por
+ejemplo, `armario.py`, `cajonera.py`, `escritorio.py` y `sillon.py` tienen
+comentado el import de su clase base y no heredan de ella). No cuentan como
+pruebas fallidas.
+
+### 4. Organización de las pruebas
+
+```
+tests/
+├─ conftest.py                    # Marcadores slow / integration
+├─ unit/                          # 528 pruebas unitarias
+│  ├─ models/
+│  │  ├─ test_mueble.py           # Clase abstracta base
+│  │  ├─ categorias/              # Asiento, Superficie, Almacenamiento (abstractas)
+│  │  ├─ concretos/               # Silla, Mesa, Sofa, Cama, SofaCama, ...
+│  │  └─ composicion/             # Comedor (mesa + sillas)
+│  ├─ services/test_tienda.py     # Lógica de negocio con Mock / patch
+│  ├─ ui/test_menu.py             # Menú Rich simulando la entrada del usuario
+│  └─ test_main.py                # Datos de ejemplo y punto de entrada
+└─ integration/                   # 15 pruebas de integración
+   ├─ conftest.py                 # Fixtures con objetos reales (sin mocks)
+   ├─ test_tienda_integracion.py  # Agregar -> descontar -> vender -> reportar
+   └─ test_menu_integracion.py    # Sesiones completas del menú con tienda real
+```
+
+### 5. Técnicas aplicadas
+
+- **Patrón AAA** (Arrange-Act-Assert) en cada prueba.
+- **Fixtures** (`@pytest.fixture`) para crear muebles, comedores y tiendas reutilizables.
+- **Parametrización** (`@pytest.mark.parametrize`) para probar muchos valores con una sola prueba.
+- **Mocks** (`Mock`, `patch`) para aislar la tienda de los muebles y simular fallos.
+- **`monkeypatch`** para simular `Prompt`, `IntPrompt`, `Confirm`, `input` y anular `time.sleep`.
+- **`capsys`** para revisar lo que se imprime en `main.py`, y una consola Rich con `record=True` para el menú.
+- **`tmp_path`** para probar el guardado del reporte sin dejar archivos en el proyecto.
+- **Clases abstractas:** se verifica que no se pueden instanciar y que declaran sus métodos abstractos.
+- **Herencia múltiple:** `SofaCama` combina el comportamiento de `Sofa` y `Cama` y se verifica su MRO.
+- **Composición:** `Comedor` se prueba con mesa y sillas reales, incluido el 5% de descuento con 4 o más sillas.
+- **Casos límite y errores:** valores cero, negativos e inválidos, muebles sin precio, ventas repetidas, archivos que no se pueden escribir y `Ctrl+C`.
 
 ## Entregables
 
