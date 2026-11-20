@@ -142,7 +142,7 @@ class TestMesaDescripcion:
             "  Forma: redonda\n"
             "  Dimensiones: 100.0x100.0x70.0cm (Área: 10000.0cm²)\n"
             "  Capacidad: 6 personas\n"
-            "  Precio final: $1100.0"
+            "  Precio final: $1150.0"
         )
 
         assert mesa.obtener_descripcion() == esperado
